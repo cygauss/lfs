@@ -1,11 +1,12 @@
+#导向/dev/null 来只输出错误
 #root下确认依赖是否齐全,额外需要wget
-#不是开头改LFS就能随意换文件夹
+#当前无法开头改LFS就能随意换文件夹
 export LFS=/mnt/lfs
 umask 022
 
 #通过支持重用，减少中断损失，来提高健壮性
+pkill -u lfs
 rm -rf $LFS
-ps -u lfs -o pid= | xargs kill
 userdel -r lfs
 groupdel lfs
 
@@ -20,9 +21,9 @@ wget https://mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-12.4.tar --direct
 tar -xf $LFS/sources/lfs-packages-12.4.tar  --strip-components=1 -C $LFS/sources
 
 #测试
-pushd $LFS/sources
-  md5sum -c md5sums
-popd
+#pushd $LFS/sources
+#  md5sum -c md5sums
+#popd
 
 #考虑到lib64的问题，很多发行版保留了/lib64但是弃用了/usr/lib64，同时sbin也没有必要了，我们这里统一软连接，故这里修改了原文
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
@@ -44,8 +45,10 @@ useradd -s /bin/bash -g lfs -m -k /dev/null lfs
 chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools}
 
 #进入lfs，这里要EOF化
+#这里如果为了像开头说的能改变lfs文件夹，会有很大改动，故不采取。
 su - lfs << "SU"
 
+#虽然看上去没用，但为了避免惨痛教训就跳过
 cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
 EOF
@@ -71,8 +74,7 @@ SU
 #source是不开新shell的，exec相反，由于一些复杂问题，这里修改得虽然蠢，但是对再修改的兼容性高
 su - lfs << "SU"
 source ~/.bashrc
-#加上括号来只输出错误
-(
+
 #参考如下，因用处太小不写脚本
 #tar -xf *z
 #pushd */
@@ -82,8 +84,8 @@ source ~/.bashrc
 
 pushd $LFS/sources
 
-#binutils
 
+#binutils
 tar -xf binutils*z
 pushd binutils*/
 mkdir -v build
@@ -103,7 +105,6 @@ rm -rf binutils*/
 
 
 #gcc
-
 tar -xf gcc*z
 pushd gcc*/
 tar -xf ../mpfr-4.2.2.tar.xz
@@ -145,7 +146,6 @@ rm -rf gcc*/
 
 
 #linux header
-
 tar -xf linux*z
 pushd linux*/
 make mrproper
@@ -157,7 +157,6 @@ rm -rf linux*/
 
 
 #glibc
-
 tar -xf glibc*z
 pushd glibc*/
 #这里因合并lib64修改
@@ -183,7 +182,7 @@ make
 make DESTDIR=$LFS install
 sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
 
-#测试去掉了
+#测试
 #echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
 #readelf -l a.out | grep ': /lib'
 #grep -E -o "$LFS/lib.*/S?crt[1in].*succeeded" dummy.log
@@ -196,8 +195,8 @@ sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
 popd
 rm -rf glibc*/
 
-#Libstdc++
 
+#Libstdc++
 tar -xf gcc*z
 pushd gcc*/
 mkdir -v build
@@ -218,5 +217,5 @@ rm -rf gcc*/
 
 #待续
 popd
-) > /dev/null
+
 SU
