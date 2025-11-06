@@ -1,5 +1,5 @@
 #导向/dev/null 来只输出错误
-#root下确认依赖是否齐全,额外需要wget
+#root下确认依赖是否齐全,额外需要wget，多要求一个bc，参考clfs
 export LFS=/mnt/lfs
 umask 022
 
@@ -452,12 +452,7 @@ tar -xf ../gmp-6.3.0.tar.xz
 mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
-case $(uname -m) in
-  x86_64)
-    sed -e '/m64=/s/lib64/lib/' \
-        -i.orig gcc/config/i386/t-linux64
-  ;;
-esac
+#同第一次，删除无用部分
 sed '/thread_header =/s/@.*@/gthr-posix.h/' \
     -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
 mkdir -v build
