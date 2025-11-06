@@ -1,10 +1,10 @@
 #导向/dev/null 来只输出错误
 #root下确认依赖是否齐全,额外需要wget
-#当前无法开头改LFS就能随意换文件夹
 export LFS=/mnt/lfs
 umask 022
 
 #通过支持重用，减少中断损失，来提高健壮性
+[ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
 pkill -u lfs
 rm -rf $LFS
 userdel -r lfs
@@ -44,34 +44,35 @@ useradd -s /bin/bash -g lfs -m -k /dev/null lfs
 #因lib64,sbin调整，删除了不需要的部分。软连接不需要考虑权限
 chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools}
 
-#进入lfs，这里要EOF化
-#这里如果为了像开头说的能改变lfs文件夹，会有很大改动，故不采取。
-su - lfs << "SU"
+#这里移除，要在开头和最后确认换回来。
+[ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
 
-#虽然看上去没用，但为了避免惨痛教训就跳过
+#进入lfs，这里要非交互化，考虑到$LFS,exec,env,source,交互，登录等各种问题，这里做了比较大的调整
+su - lfs << SU
+cat > ~/.bashrc << "EOF"
+set +h
+umask 022
+LFS=$LFS
+EOF
+SU
+
+su - lfs << "SU"
 cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
 EOF
 
-cat > ~/.bashrc << "EOF"
-set +h
-umask 022
-LFS=/mnt/lfs
+cat >> ~/.bashrc << "EOF"
 LC_ALL=POSIX
 LFS_TGT=$(uname -m)-lfs-linux-gnu
 PATH=/usr/bin
 if [ ! -L /bin ]; then PATH=/bin:$PATH; fi
 PATH=$LFS/tools/bin:$PATH
 CONFIG_SITE=$LFS/usr/share/config.site
-export LFS LC_ALL LFS_TGT PATH CONFIG_SITE
-EOF
-
-cat >> ~/.bashrc << "EOF"
-export MAKEFLAGS=-j$(nproc)
+MAKEFLAGS=-j$(nproc)
+export LFS LC_ALL LFS_TGT PATH CONFIG_SITE MAKEFLAGS
 EOF
 SU
 
-#source是不开新shell的，exec相反，由于一些复杂问题，这里修改得虽然蠢，但是对再修改的兼容性高
 su - lfs << "SU"
 source ~/.bashrc
 
@@ -219,3 +220,4 @@ rm -rf gcc*/
 popd
 
 SU
+[ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
