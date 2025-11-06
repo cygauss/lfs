@@ -500,3 +500,9 @@ rm -rf util-linux*/
 popd
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
+
+mkdir -pv /mnt/lfs-target
+cp -av $LFS/* /mnt/lfs-target
+chown -R root:root /mnt/lfs-target
+install -v -dm755 /mnt/lfs-target/dev
+
