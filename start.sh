@@ -86,7 +86,7 @@ source ~/.bashrc
 pushd $LFS/sources
 
 
-#binutils
+#binutils第一遍
 tar -xf binutils*z
 pushd binutils*/
 mkdir -v build
@@ -105,7 +105,7 @@ popd
 rm -rf binutils*/
 
 
-#gcc
+#gcc第一遍
 tar -xf gcc*z
 pushd gcc*/
 tar -xf ../mpfr-4.2.2.tar.xz
@@ -217,7 +217,286 @@ popd
 rm -rf gcc*/
 
 #待续
+#m4
+tar -xf m4*z
+pushd m4*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
 popd
+rm -rf m4*/
 
+#ncurses
+tar -xf ncurses*z
+pushd ncurses*/
+mkdir build
+pushd build
+  ../configure --prefix=$LFS/tools AWK=gawk
+  make -C include
+  make -C progs tic
+  install progs/tic $LFS/tools/bin
+popd
+./configure --prefix=/usr                \
+            --host=$LFS_TGT              \
+            --build=$(./config.guess)    \
+            --mandir=/usr/share/man      \
+            --with-manpage-format=normal \
+            --with-shared                \
+            --without-normal             \
+            --with-cxx-shared            \
+            --without-debug              \
+            --without-ada                \
+            --disable-stripping          \
+            AWK=gawk
+make
+make DESTDIR=$LFS install
+ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
+sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+    -i $LFS/usr/include/curses.h
+popd
+rm -rf ncurses*/
+
+#bash
+tar -xf bash*z
+pushd bash*/
+./configure --prefix=/usr                      \
+            --build=$(sh support/config.guess) \
+            --host=$LFS_TGT                    \
+            --without-bash-malloc
+make
+make DESTDIR=$LFS install
+ln -sv bash $LFS/bin/sh
+popd
+rm -rf bash*/
+
+#coreutils
+tar -xf coreutils*z
+pushd coreutils*/
+./configure --prefix=/usr                     \
+            --host=$LFS_TGT                   \
+            --build=$(build-aux/config.guess) \
+            --enable-install-program=hostname \
+            --enable-no-install-program=kill,uptime
+make
+make DESTDIR=$LFS install
+mv -v $LFS/usr/bin/chroot              $LFS/usr/sbin
+mkdir -pv $LFS/usr/share/man/man8
+mv -v $LFS/usr/share/man/man1/chroot.1 $LFS/usr/share/man/man8/chroot.8
+sed -i 's/"1"/"8"/'                    $LFS/usr/share/man/man8/chroot.8
+popd
+rm -rf coreutils*/
+
+#diffutils
+tar -xf diffutils*z
+pushd diffutils*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            gl_cv_func_strcasecmp_works=y \
+            --build=$(./build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf diffutils*/
+
+#file
+tar -xf file*z
+pushd file*/
+mkdir build
+pushd build
+  ../configure --disable-bzlib      \
+               --disable-libseccomp \
+               --disable-xzlib      \
+               --disable-zlib
+  make
+popd
+./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
+make FILE_COMPILE=$(pwd)/build/src/file
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/libmagic.la
+popd
+rm -rf file*/
+
+#findutils
+tar -xf findutils*z
+pushd */
+./configure --prefix=/usr                   \
+            --localstatedir=/var/lib/locate \
+            --host=$LFS_TGT                 \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf findutils*/
+
+#gawk
+tar -xf gawk*z
+pushd gawk*/
+sed -i 's/extras//' Makefile.in
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf gawk*/
+
+#grep
+tar -xf grep*z
+pushd grep*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(./build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf grep*/
+
+#gzip
+tar -xf gzip*z
+pushd gzip*/
+./configure --prefix=/usr --host=$LFS_TGT
+make
+make DESTDIR=$LFS install
+popd
+rm -rf gzip*/
+
+#make
+tar -xf make*z
+pushd make*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf make*/
+
+#patch
+tar -xf patch*z
+pushd patch*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf patch*/
+
+#sed
+tar -xf sed*z
+pushd sed*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(./build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf sed*/
+
+#tar
+tar -xf tar*z
+pushd tar*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+popd
+rm -rf tar*/
+
+#xz
+tar -xf xz*z
+pushd xz*/
+./configure --prefix=/usr                     \
+            --host=$LFS_TGT                   \
+            --build=$(build-aux/config.guess) \
+            --disable-static                  \
+            --docdir=/usr/share/doc/xz-5.8.1
+make
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/liblzma.la
+popd
+rm -rf xz*/
+
+#binutils第二遍
+tar -xf binutils*z
+pushd binutils*/
+sed '6031s/$add_dir//' -i ltmain.sh
+mkdir -v build
+cd       build
+../configure                   \
+    --prefix=/usr              \
+    --build=$(../config.guess) \
+    --host=$LFS_TGT            \
+    --disable-nls              \
+    --enable-shared            \
+    --enable-gprofng=no        \
+    --disable-werror           \
+    --enable-64-bit-bfd        \
+    --enable-new-dtags         \
+    --enable-default-hash-style=gnu
+make
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+popd
+rm -rf binutils*/
+
+#gcc第二遍
+tar -xf gcc*z
+pushd gcc*/
+tar -xf ../mpfr-4.2.2.tar.xz
+mv -v mpfr-4.2.2 mpfr
+tar -xf ../gmp-6.3.0.tar.xz
+mv -v gmp-6.3.0 gmp
+tar -xf ../mpc-1.3.1.tar.gz
+mv -v mpc-1.3.1 mpc
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
+sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+    -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
+mkdir -v build
+cd       build
+../configure                   \
+    --build=$(../config.guess) \
+    --host=$LFS_TGT            \
+    --target=$LFS_TGT          \
+    --prefix=/usr              \
+    --with-build-sysroot=$LFS  \
+    --enable-default-pie       \
+    --enable-default-ssp       \
+    --disable-nls              \
+    --disable-multilib         \
+    --disable-libatomic        \
+    --disable-libgomp          \
+    --disable-libquadmath      \
+    --disable-libsanitizer     \
+    --disable-libssp           \
+    --disable-libvtv           \
+    --enable-languages=c,c++   \
+    LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc
+make
+make DESTDIR=$LFS install
+ln -sv gcc $LFS/usr/bin/cc
+popd
+rm -rf gcc*/
+
+#util-linux部分程序
+tar -xf util-linux*z
+pushd util-linux*/
+./configure --build=$(config/config.guess) --host=$LFS_TGT --disable-shared
+make agetty mount setsid
+install -vm755 agetty       $LFS/usr/sbin
+install -vm755 mount setsid $LFS/usr/bin
+popd
+rm -rf util-linux*/
+
+#暂时结束安装
+popd
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
