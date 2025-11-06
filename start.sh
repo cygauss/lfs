@@ -1,4 +1,7 @@
 #root下确认依赖是否齐全,额外需要wget。clfs因内核需要bc.
+#apt update
+#apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget
+#ln -sf /bin/bash /bin/sh
 export LFS=/mnt/lfs
 umask 022
 
@@ -478,23 +481,31 @@ ln -sv gcc $LFS/usr/bin/cc
 popd
 rm -rf gcc*/
 
-#util-linux部分程序
-tar -xf util-linux*z
-pushd util-linux*/
-./configure --build=$(config/config.guess) --host=$LFS_TGT --disable-shared
-make agetty mount setsid
-install -vm755 agetty       $LFS/usr/sbin
-install -vm755 mount setsid $LFS/usr/bin
-popd
-rm -rf util-linux*/
-
 #暂时结束安装
 popd
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
 
-mkdir -pv /mnt/lfs-target
-cp -av $LFS/* /mnt/lfs-target
-chown -R root:root /mnt/lfs-target
-install -v -dm755 /mnt/lfs-target/dev
+#去掉lib64部分
+chown --from lfs -R root:root $LFS/{usr,var,etc,tools}
 
+#挂载
+mkdir -pv $LFS/{dev,proc,sys,run}
+mount -v --bind /dev $LFS/dev
+mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
+mount -vt proc proc $LFS/proc
+mount -vt sysfs sysfs $LFS/sys
+mount -vt tmpfs tmpfs $LFS/run
+if [ -h $LFS/dev/shm ]; then
+  install -v -d -m 1777 $LFS$(realpath /dev/shm)
+else
+  mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
+fi
+chroot "$LFS" /usr/bin/env -i   \
+    HOME=/root                  \
+    TERM="$TERM"                \
+    PS1='(lfs chroot) \u:\w\$ ' \
+    PATH=/usr/bin:/usr/sbin     \
+    MAKEFLAGS="-j$(nproc)"      \
+    TESTSUITEFLAGS="-j$(nproc)" \
+    /bin/bash --login
