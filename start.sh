@@ -1,9 +1,8 @@
-#导向/dev/null 来只输出错误
-#root下确认依赖是否齐全,额外需要wget，多要求一个bc，参考clfs
+#root下确认依赖是否齐全,额外需要wget。clfs因内核需要bc.
 export LFS=/mnt/lfs
 umask 022
 
-#通过支持重用，减少中断损失，来提高健壮性
+#确保无残留
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
 pkill -u lfs
 rm -rf $LFS
@@ -16,7 +15,6 @@ chmod 755 $LFS
 
 mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
-#系统可能没wget。且如果分开下会被gnu的服务器气晕，注意调整镜像，去掉顶目录
 wget https://mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-12.4.tar --directory-prefix=$LFS/sources
 tar -xf $LFS/sources/lfs-packages-12.4.tar  --strip-components=1 -C $LFS/sources
 
@@ -25,7 +23,7 @@ tar -xf $LFS/sources/lfs-packages-12.4.tar  --strip-components=1 -C $LFS/sources
 #  md5sum -c md5sums
 #popd
 
-#考虑到lib64的问题，很多发行版保留了/lib64但是弃用了/usr/lib64，同时sbin也没有必要了，我们这里统一软连接，故这里修改了原文
+#软链接sbin,lib64到bin,lib，故修改原文
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
 for i in bin lib sbin; do
@@ -41,13 +39,13 @@ mkdir -pv $LFS/tools
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
-#因lib64,sbin调整，删除了不需要的部分。软连接不需要考虑权限
+#软链接不需要考虑权限
 chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools}
 
-#这里移除，要在开头和最后确认换回来。
+#结束后需返还
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
 
-#进入lfs，这里要非交互化，考虑到$LFS,exec,env,source,交互，登录等各种问题，这里做了比较大的调整
+#因非交互shell,考虑到$LFS,bash,source等，这里做了调整
 su - lfs << SU
 cat > ~/.bashrc << "EOF"
 set +h
@@ -76,7 +74,7 @@ SU
 su - lfs << "SU"
 source ~/.bashrc
 
-#参考如下，因用处太小不写脚本
+#软件包
 #tar -xf *z
 #pushd */
 #compile
@@ -216,7 +214,6 @@ rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
 
-#待续
 #m4
 tar -xf m4*z
 pushd m4*/
