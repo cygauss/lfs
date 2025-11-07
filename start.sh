@@ -77,7 +77,7 @@ SU
 su - lfs << "SU"
 source ~/.bashrc
 
-#软件包
+#package name
 #tar -xf *z
 #pushd */
 #compile
@@ -87,7 +87,7 @@ source ~/.bashrc
 pushd $LFS/sources
 
 
-#binutils第一遍
+#binutils-tools
 tar -xf binutils*z
 pushd binutils*/
 mkdir -v build
@@ -106,7 +106,7 @@ popd
 rm -rf binutils*/
 
 
-#gcc第一遍
+#gcc-tools
 tar -xf gcc*z
 pushd gcc*/
 tar -xf ../mpfr-4.2.2.tar.xz
@@ -153,7 +153,7 @@ popd
 rm -rf gcc*/
 
 
-#linux headers
+#linux-headers
 tar -xf linux*z
 pushd linux*/
 make mrproper
@@ -166,7 +166,7 @@ popd
 rm -rf linux*/
 stow -d $LFS/store -t $LFS/ -S linux-headers
 
-#glibc
+#glibc-tmp
 tar -xf glibc*z
 pushd glibc*/
 #这里因合并lib64和store修改
@@ -194,7 +194,7 @@ EOF
       --enable-kernel=5.4
 make
 make DESTDIR=$LFS/store/glibc-tmp install
-sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
+sed '/RTLDLIST=/s@/usr@@g' -i $LFS/store/glibc-tmp/usr/bin/ldd
 stow -d $LFS/store -t $LFS/ -S glibc-tmp
 #测试
 #echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
@@ -209,7 +209,7 @@ stow -d $LFS/store -t $LFS/ -S glibc-tmp
 popd
 rm -rf glibc*/
 
-#Libstdc++
+#gcc-libstdc++-tmp
 tar -xf gcc*z
 pushd gcc*/
 mkdir -v build
@@ -223,9 +223,9 @@ cd       build
     --disable-libstdcxx-pch    \
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/15.2.0
 make
-make DESTDIR=$LFS/store/gcc-libstdc++ install
-rm -v $LFS/store/gcc-libstdc++/usr/lib/lib{stdc++{,exp,fs},supc++}.la
-stow -d $LFS/store -t $LFS/ -S gcc-libstdc++
+make DESTDIR=$LFS/store/gcc-libstdc++-tmp install
+rm -v $LFS/store/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+stow -d $LFS/store -t $LFS/ -S gcc-libstdc++-tmp
 popd
 rm -rf gcc*/
 #停
