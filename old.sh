@@ -115,9 +115,15 @@ tar -xf ../gmp-6.3.0.tar.xz
 mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
+#这里不可调整，会导致libstc时出错
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+ ;;
+esac
 mkdir -v build
 cd       build
-#因lib64调整，删除了不需要的部分
 ../configure                  \
     --target=$LFS_TGT         \
     --prefix=$LFS/tools       \
