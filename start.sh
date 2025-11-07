@@ -169,7 +169,7 @@ stow -d $LFS/store -t $LFS/ -S linux-headers
 #glibc
 tar -xf glibc*z
 pushd glibc*/
-#这里因合并lib64修改
+#这里因合并lib64和store修改
 case $(uname -m) in
     i?86)   ln -sfv ld-linux.so.2 $LFS/store/glibc-tmp/usr/lib/ld-lsb.so.3
     ;;
@@ -180,7 +180,7 @@ esac
 mkdir -v build
 cd       build
 #因/usr/sbin修改，使得stow正常工作
-#加上--sbindir=EPREFIX/bin也改变不了两个程序的位置，要在这里加
+#加上--sbindir=EPREFIX/bin也改变不了两个程序的位置usr/sbin，要在这里加
 cat > configparms << "EOF"
 rootsbindir=/usr/bin
 sbindir=/usr/bin
@@ -194,7 +194,7 @@ EOF
       --enable-kernel=5.4
 make
 make DESTDIR=$LFS/store/glibc-tmp install
-#无需改正 ldd 脚本中硬编码的可执行文件加载器路径
+sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
 stow -d $LFS/store -t $LFS/ -S glibc-tmp
 #测试
 #echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
@@ -209,7 +209,6 @@ stow -d $LFS/store -t $LFS/ -S glibc-tmp
 popd
 rm -rf glibc*/
 
-#停
 #Libstdc++
 tar -xf gcc*z
 pushd gcc*/
@@ -226,9 +225,10 @@ cd       build
 make
 make DESTDIR=$LFS/store/gcc-libstdc++ install
 rm -v $LFS/store/gcc-libstdc++/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+stow -d $LFS/store -t $LFS/ -S gcc-libstdc++
 popd
 rm -rf gcc*/
-stow -d $LFS/store -t $LFS/ -S gcc-libstdc++
+#停
 
 #m4
 tar -xf m4*z
