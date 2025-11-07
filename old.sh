@@ -1,4 +1,4 @@
-#root下确认依赖是否齐全,额外需要wget。clfs因内核需要bc.加上stow来作为包管理
+#root下确认依赖是否齐全,额外需要wget。clfs因内核需要bc.
 #apt update
 #apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget
 #ln -sf /bin/bash /bin/sh
@@ -26,8 +26,8 @@ tar -xf $LFS/sources/lfs-packages-12.4.tar  --strip-components=1 -C $LFS/sources
 #  md5sum -c md5sums
 #popd
 
-#软链接sbin,lib64到bin,lib，增加store,故修改原文
-mkdir -pv $LFS/{etc,var,store} $LFS/usr/{bin,lib}
+#软链接sbin,lib64到bin,lib，故修改原文
+mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
 for i in bin lib sbin; do
   ln -sv usr/$i $LFS/$i
@@ -43,7 +43,7 @@ mkdir -pv $LFS/tools
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
 #软链接不需要考虑权限
-chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools,store}
+chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools}
 
 #结束后需返还
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
@@ -147,38 +147,32 @@ popd
 rm -rf gcc*/
 
 
-#linux headers
+#linux header
 tar -xf linux*z
 pushd linux*/
 make mrproper
 make headers
 find usr/include -type f ! -name '*.h' -delete
-#修改以stow
-mkdir -p $LFS/store/linux-headers/usr
-cp -rv usr/include $LFS/store/linux-headers/usr
+cp -rv usr/include $LFS/usr
 popd
 rm -rf linux*/
-stow -d $LFS/store -t $LFS/ -S linux-headers
+
 
 #glibc
 tar -xf glibc*z
 pushd glibc*/
 #这里因合并lib64修改
 case $(uname -m) in
-    i?86)   ln -sfv ld-linux.so.2 $LFS/store/glibc-tmp/usr/lib/ld-lsb.so.3
+    i?86)   ln -sfv ld-linux.so.2 $LFS/lib/ld-lsb.so.3
     ;;
-    x86_64) ln -sfv ld-linux-x86-64.so.2 $LFS/store/glibc-tmp/usr/lib/ld-lsb-x86-64.so.3
+    x86_64) ln -sfv ld-linux-x86-64.so.2 $LFS/lib/ld-lsb-x86-64.so.3
     ;;
 esac
-#从简不采用补丁
+#这里从简，没有应用兼容fhs的补丁
 mkdir -v build
 cd       build
-#因/usr/sbin修改，使得stow正常工作
-#加上--sbindir=EPREFIX/bin也改变不了两个程序的位置，要在这里加
-cat > configparms << "EOF"
-rootsbindir=/usr/bin
-sbindir=/usr/bin
-EOF
+#无需指定工具到sbin
+
 ../configure                             \
       --prefix=/usr                      \
       --host=$LFS_TGT                    \
@@ -187,9 +181,9 @@ EOF
       libc_cv_slibdir=/usr/lib           \
       --enable-kernel=5.4
 make
-make DESTDIR=$LFS/store/glibc-tmp install
-#无需改正 ldd 脚本中硬编码的可执行文件加载器路径
-stow -d $LFS/store -t $LFS/ -S glibc-tmp
+make DESTDIR=$LFS install
+sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
+
 #测试
 #echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
 #readelf -l a.out | grep ': /lib'
@@ -203,7 +197,7 @@ stow -d $LFS/store -t $LFS/ -S glibc-tmp
 popd
 rm -rf glibc*/
 
-#停
+
 #Libstdc++
 tar -xf gcc*z
 pushd gcc*/
@@ -218,11 +212,8 @@ cd       build
     --disable-libstdcxx-pch    \
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/15.2.0
 make
-make DESTDIR=$LFS/store/gcc-libstdc++ install
-#不知道为什么usr/lib会转移到usr/lib64
-rm -v $LFS/store/gcc-libstdc++/usr/lib64/lib{stdc++{,exp,fs},supc++}.la
-cp -a $LFS/store/gcc-libstdc++/usr/lib64/* $LFS/store/gcc-libstdc++/usr/lib
-rm -r $LFS/store/gcc-libstdc++/usr/lib64
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
 
