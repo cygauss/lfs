@@ -228,20 +228,20 @@ rm -v $LFS/store/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 stow -d $LFS/store -t $LFS/ -S gcc-libstdc++-tmp
 popd
 rm -rf gcc*/
-#停
 
-#m4
+#m4-tmp
 tar -xf m4*z
 pushd m4*/
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS install
+make DESTDIR=$LFS/store/m4-tmp install
+stow -d $LFS/store -t $LFS/ -S m4-tmp
 popd
 rm -rf m4*/
 
-#ncurses
+#ncurses-tmp
 tar -xf ncurses*z
 pushd ncurses*/
 mkdir build
@@ -264,14 +264,15 @@ popd
             --disable-stripping          \
             AWK=gawk
 make
-make DESTDIR=$LFS install
-ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
+make DESTDIR=$LFS/store/ncurses-tmp install
+ln -sv libncursesw.so $LFS/store/ncurses-tmp/usr/lib/libncurses.so
 sed -e 's/^#if.*XOPEN.*$/#if 1/' \
-    -i $LFS/usr/include/curses.h
+    -i $LFS/store/ncurses-tmp/usr/include/curses.h
+stow -d $LFS/store -t $LFS/ -S ncurses-tmp
 popd
 rm -rf ncurses*/
 
-#bash
+#bash-tmp
 tar -xf bash*z
 pushd bash*/
 ./configure --prefix=/usr                      \
@@ -279,12 +280,14 @@ pushd bash*/
             --host=$LFS_TGT                    \
             --without-bash-malloc
 make
-make DESTDIR=$LFS install
-ln -sv bash $LFS/bin/sh
+make DESTDIR=$LFS/store/bash-tmp install
+#这里因为是单个的目录没bin，要添加usr
+ln -sv bash $LFS/store/bash-tmp/usr/bin/sh
+stow -d $LFS/store -t $LFS/ -S bash-tmp
 popd
 rm -rf bash*/
 
-#coreutils
+#coreutils-tmp
 tar -xf coreutils*z
 pushd coreutils*/
 ./configure --prefix=/usr                     \
@@ -293,15 +296,15 @@ pushd coreutils*/
             --enable-install-program=hostname \
             --enable-no-install-program=kill,uptime
 make
-make DESTDIR=$LFS install
-mv -v $LFS/usr/bin/chroot              $LFS/usr/sbin
-mkdir -pv $LFS/usr/share/man/man8
-mv -v $LFS/usr/share/man/man1/chroot.1 $LFS/usr/share/man/man8/chroot.8
-sed -i 's/"1"/"8"/'                    $LFS/usr/share/man/man8/chroot.8
+make DESTDIR=$LFS/store/coreutils-tmp install
+mkdir -pv $LFS/store/coreutils-tmp/usr/share/man/man8
+mv -v $LFS/store/coreutils-tmp/usr/share/man/man1/chroot.1 $LFS/store/coreutils-tmp/usr/share/man/man8/chroot.8
+sed -i 's/"1"/"8"/'                    $LFS/store/coreutils-tmp/usr/share/man/man8/chroot.8
+stow -d $LFS/store -t $LFS/ -S coreutils-tmp
 popd
 rm -rf coreutils*/
 
-#diffutils
+#diffutils-tmp
 tar -xf diffutils*z
 pushd diffutils*/
 ./configure --prefix=/usr   \
@@ -309,11 +312,12 @@ pushd diffutils*/
             gl_cv_func_strcasecmp_works=y \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS install
+make DESTDIR=$LFS/store/diffutils-tmp install
+stow -d $LFS/store -t $LFS/ -S diffutils-tmp
 popd
 rm -rf diffutils*/
 
-#file
+#file-tmp
 tar -xf file*z
 pushd file*/
 mkdir build
@@ -326,23 +330,25 @@ pushd build
 popd
 ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
 make FILE_COMPILE=$(pwd)/build/src/file
-make DESTDIR=$LFS install
-rm -v $LFS/usr/lib/libmagic.la
+make DESTDIR=$LFS/store/file-tmp install
+rm -v $LFS/store/file-tmp/usr/lib/libmagic.la
+stow -d $LFS/store -t $LFS/ -S file-tmp
 popd
 rm -rf file*/
 
-#findutils
+#findutils-tmp
 tar -xf findutils*z
 pushd */
+#放弃fhs，从简
 ./configure --prefix=/usr                   \
-            --localstatedir=/var/lib/locate \
             --host=$LFS_TGT                 \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS install
+make DESTDIR=$LFS/store/findutils-tmp install
+stow -d $LFS/store -t $LFS/ -S findutils-tmp
 popd
 rm -rf findutils*/
-
+#停
 #gawk
 tar -xf gawk*z
 pushd gawk*/
