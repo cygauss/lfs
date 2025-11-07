@@ -225,12 +225,10 @@ cd       build
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/15.2.0
 make
 make DESTDIR=$LFS/store/gcc-libstdc++ install
-#不知道为什么usr/lib会转移到usr/lib64
-rm -v $LFS/store/gcc-libstdc++/usr/lib64/lib{stdc++{,exp,fs},supc++}.la
-cp -a $LFS/store/gcc-libstdc++/usr/lib64/* $LFS/store/gcc-libstdc++/usr/lib
-rm -r $LFS/store/gcc-libstdc++/usr/lib64
+rm -v $LFS/store/gcc-libstdc++/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
+stow -d $LFS/store -t $LFS/ -S gcc-libstdc++
 
 #m4
 tar -xf m4*z
