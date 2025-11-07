@@ -39,7 +39,7 @@ mkdir -pv $LFS/tools
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
-#软链接不需要考虑权限
+
 chown -v lfs $LFS/{usr{,/*},var,etc,tools}
 case $(uname -m) in
   x86_64) chown -v lfs $LFS/lib64 ;;
@@ -115,16 +115,14 @@ tar -xf ../gmp-6.3.0.tar.xz
 mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
-mkdir -v build
-cd       build
-
 case $(uname -m) in
   x86_64)
     sed -e '/m64=/s/lib64/lib/' \
         -i.orig gcc/config/i386/t-linux64
  ;;
 esac
-
+mkdir -v build
+cd       build
 ../configure                  \
     --target=$LFS_TGT         \
     --prefix=$LFS/tools       \
@@ -176,7 +174,7 @@ case $(uname -m) in
             ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
     ;;
 esac
-#这里从简，没有应用兼容fhs的补丁
+patch -Np1 -i ../glibc-2.42-fhs-1.patch
 mkdir -v build
 cd       build
 echo "rootsbindir=/usr/sbin" > configparms
@@ -224,7 +222,7 @@ make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
-
+#停
 #m4
 tar -xf m4*z
 pushd m4*/
