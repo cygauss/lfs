@@ -114,9 +114,9 @@ tar -xf ../gmp-6.3.0.tar.xz
 mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
-#这里是指定该编译器生产的程序会默认查看lib/，虽然已经软链接了，但去掉依然会出现问题，比如libstdc没有这个就会把库放进usr/lib64
-#于是最后stow前删除有害文件的那一步就会失败（成功了一半），KISS上看，这里不能去掉
-#核心是方便后续程序的stow
+
+#这里是指定该编译器生产的程序会默认查看lib/，去掉会让libstdc把库放进usr/lib64，于是删除有害文件的那一步就会失败
+#虽然已经软链接了，但方便后续程序的stow，KISS上看，这里不能去掉
 case $(uname -m) in
   x86_64)
     sed -e '/m64=/s/lib64/lib/' \
@@ -505,26 +505,3 @@ popd
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
 
-#去掉lib64部分
-chown --from lfs -R root:root $LFS/{usr,var,etc,tools}
-
-#挂载
-mkdir -pv $LFS/{dev,proc,sys,run}
-mount -v --bind /dev $LFS/dev
-mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
-mount -vt proc proc $LFS/proc
-mount -vt sysfs sysfs $LFS/sys
-mount -vt tmpfs tmpfs $LFS/run
-if [ -h $LFS/dev/shm ]; then
-  install -v -d -m 1777 $LFS$(realpath /dev/shm)
-else
-  mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
-fi
-chroot "$LFS" /usr/bin/env -i   \
-    HOME=/root                  \
-    TERM="$TERM"                \
-    PS1='(lfs chroot) \u:\w\$ ' \
-    PATH=/usr/bin:/usr/sbin     \
-    MAKEFLAGS="-j$(nproc)"      \
-    TESTSUITEFLAGS="-j$(nproc)" \
-    /bin/bash --login
