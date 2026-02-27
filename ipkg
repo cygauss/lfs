@@ -1,0 +1,7 @@
+LIB_DIR=/var/lib/pkg
+CACHE_DIR=/var/cache/pkg
+set -euo pipefail
+mkdir -p $LIB_DIR
+rsync -aKni --existing $CACHE_DIR/"$1"/ / | awk '$1 != ".d..t......" { print; bad=1 } END { exit bad }'
+rsync -aK $CACHE_DIR/"$1"/ /
+find $CACHE_DIR/"$1" ! -type d -printf "/%P\n" > $LIB_DIR/"$1"
