@@ -1,0 +1,4 @@
+LIB_DIR=/var/lib/pkg
+set -euo pipefail
+xargs -r rm -f -- < $LIB_DIR/"$1"
+rm -- $LIB_DIR/"$1"
