@@ -4,7 +4,7 @@
 #apt install wget rsync
 #ln -sf /bin/bash /bin/sh
 
-MIRROR=
+MIRROR=akko.wutaohou.ru/cygauss/lfs-packages-12.4.tar
 SRC_DIR=usr/src
 CACHE_DIR=var/cache/pkg
 LIB_DIR=var/lib/pkg
@@ -438,8 +438,8 @@ pushd xz*/
             --build=$(build-aux/config.guess) \
             --disable-static
 make
-make DESTDIR=$LFS/$CACHE_DIR/tar-tmp install
-rm -v $LFS/$CACHE_DIR/tar-tmp/usr/lib/liblzma.la
+make DESTDIR=$LFS/$CACHE_DIR/xz-tmp install
+rm -v $LFS/$CACHE_DIR/xz-tmp/usr/lib/liblzma.la
 popd
 rm -rf xz*/
 ipkg xz-tmp
@@ -519,4 +519,4 @@ popd
 BASH
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
-
+chown -R root:root $LFS
