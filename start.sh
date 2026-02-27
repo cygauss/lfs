@@ -1,7 +1,15 @@
-#root下确认依赖是否齐全,额外需要wget。clfs因内核需要bc.加上stow来作为包管理
+#root下运行
 #apt update
-#apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget stow
+#apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils
+#apt install wget rsync
 #ln -sf /bin/bash /bin/sh
+
+MIRROR=akko.wutaohou.ru/cygauss/lfs-packages-12.4.tar
+SRC_DIR=usr/src
+CACHE_DIR=var/cache/pkg
+LIB_DIR=var/lib/pkg
+export MIRORR SRC_DIR CACHE_DIR LIB_DIR
+
 export LFS=/mnt/lfs
 umask 022
 
@@ -13,56 +21,50 @@ userdel -r lfs
 groupdel lfs
 
 mkdir -pv $LFS
-chown root:root $LFS
 chmod 755 $LFS
 
-mkdir -v $LFS/sources
-chmod -v a+wt $LFS/sources
-wget https://mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-12.4.tar --directory-prefix=$LFS/sources
-tar -xf $LFS/sources/lfs-packages-12.4.tar  --strip-components=1 -C $LFS/sources
+mkdir -pv $LFS/$SRC_DIR
+wget -O $LFS/$SRC_DIR/lfs-packages.tar "$MIRROR"
+tar -xf $LFS/$SRC_DIR/lfs-packages.tar  --strip-components=1 -C $LFS/$SRC_DIR
+chown -R root:root $LFS/$SRC_DIR
 
-#测试
-#pushd $LFS/sources
-#  md5sum -c md5sums
-#popd
-
-#软链接sbin,lib64到bin,lib，增加store,故修改原文
-mkdir -pv $LFS/{etc,var,store} $LFS/usr/{bin,lib}
+#软链接sbin,lib64到bin,lib,故修改原文
+mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
-for i in bin lib sbin; do
-  ln -sv usr/$i $LFS/$i
-done
+ln -sv usr/bin $LFS/sbin
+ln -sv usr/bin $LFS/bin
+ln -sv usr/lib $LFS/lib
+
 case $(uname -m) in
   x86_64)
   ln -sv lib $LFS/usr/lib64
-  ln -sv usr/lib64 $LFS/lib64
+  ln -sv usr/lib $LFS/lib64
   ;;
 esac
-mkdir -pv $LFS/tools
+#tools太临时了就不改了
+mkdir -pv $LFS/tools/bin
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
-#软链接不需要考虑权限
-chown -v lfs $LFS/{usr{,/bin,/lib},var,etc,tools,store}
+#简化
+chown -R lfs:lfs $LFS
 
 #结束后需返还
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
 
-#因非交互shell,考虑到$LFS,bash,source等，这里做了调整
-su - lfs << SU
-cat > ~/.bashrc << "EOF"
+#因非交互shell做了调整
+
+cat > /home/lfs/.bashrc << EOF
 set +h
 umask 022
 LFS=$LFS
-EOF
-SU
-
-su - lfs << "SU"
-cat > ~/.bash_profile << "EOF"
-exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
+SRC_DIR=$SRC_DIR
+CACHE_DIR=$CACHE_DIR
+LIB_DIR=$LIB_DIR
+export SRC_DIR CACHE_DIR LIB_DIR
 EOF
 
-cat >> ~/.bashrc << "EOF"
+cat >> /home/lfs/.bashrc << "EOF"
 LC_ALL=POSIX
 LFS_TGT=$(uname -m)-lfs-linux-gnu
 PATH=/usr/bin
@@ -72,10 +74,31 @@ CONFIG_SITE=$LFS/usr/share/config.site
 MAKEFLAGS=-j$(nproc)
 export LFS LC_ALL LFS_TGT PATH CONFIG_SITE MAKEFLAGS
 EOF
-SU
+
+chown -R lfs:lfs /home/lfs
 
 su - lfs << "SU"
+
+env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash << "BASH"
 source ~/.bashrc
+
+cat > $LFS/tools/bin/ipkg << "EOF"
+set -euo pipefail
+mkdir -p $LFS/$LIB_DIR
+rsync -aKni --existing $LFS/$CACHE_DIR/"$1"/ $LFS/ | awk '$1 != ".d..t......" { print; bad=1 } END { exit bad }'
+rsync -aK $LFS/$CACHE_DIR/"$1"/ $LFS/
+find $LFS/$CACHE_DIR/"$1" ! -type d -printf "$LFS/%P\n" > $LFS/$LIB_DIR/"$1"
+EOF
+chmod u+x $LFS/tools/bin/ipkg
+
+cat > $LFS/tools/bin/upkg << "EOF"
+set -euo pipefail
+xargs -r rm -f -- < $LFS/$LIB_DIR/"$1"
+rm -- $LFS/$LIB_DIR/"$1"
+EOF
+chmod u+x $LFS/tools/bin/upkg
+
+pushd $LFS/$SRC_DIR
 
 #package name
 #tar -xf *z
@@ -84,9 +107,6 @@ source ~/.bashrc
 #popd
 #rm -rf */
 
-pushd $LFS/sources
-
-#前两个交叉工具如果stow化得不偿失
 #binutils-tools
 tar -xf binutils*z
 pushd binutils*/
@@ -115,8 +135,9 @@ mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
 
-#这里是指定该编译器生产的程序会默认查看lib/，去掉会让libstdc把库放进usr/lib64，于是删除有害文件的那一步就会失败
-#虽然已经软链接了，但方便后续程序的stow，KISS上看，这里不能去掉
+#这里是指定该编译器生产的程序会默认查看lib而非lib64，如果去掉，不够标准
+#且安装libstdc++时也会把库放进usr/lib64，无法按原文删除有害文件
+
 case $(uname -m) in
   x86_64)
     sed -e '/m64=/s/lib64/lib/' \
@@ -159,12 +180,12 @@ pushd linux*/
 make mrproper
 make headers
 find usr/include -type f ! -name '*.h' -delete
-#修改以stow
-mkdir -p $LFS/store/linux-headers/usr
-cp -rv usr/include $LFS/store/linux-headers/usr
+#修改以建立fakeroot
+mkdir -pv $LFS/$CACHE_DIR/linux-headers/usr
+cp -r usr/include $LFS/$CACHE_DIR/linux-headers/usr
 popd
 rm -rf linux*/
-stow -d $LFS/store -t $LFS/ -S linux-headers
+ipkg linux-headers
 
 #glibc-tmp
 tar -xf glibc*z
@@ -172,12 +193,7 @@ pushd glibc*/
 #从简不采用lsb和fhs的链接和补丁
 mkdir -v build
 cd       build
-#因/usr/sbin修改，使得stow正常工作
-#加上--sbindir=EPREFIX/bin也改变不了两个程序的位置usr/sbin，要在这里加
-cat > configparms << "EOF"
-rootsbindir=/usr/bin
-sbindir=/usr/bin
-EOF
+#从简不改变bin位置
 ../configure                             \
       --prefix=/usr                      \
       --host=$LFS_TGT                    \
@@ -186,12 +202,12 @@ EOF
       libc_cv_slibdir=/usr/lib           \
       --enable-kernel=5.4
 make
-make DESTDIR=$LFS/store/glibc-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/glibc-tmp install
 # ldd 脚本无需更改
 #测试需要在stow后运行，这里也去掉
 popd
 rm -rf glibc*/
-stow -d $LFS/store -t $LFS/ -S glibc-tmp
+ipkg glibc-tmp
 
 #gcc-libstdc++-tmp
 tar -xf gcc*z
@@ -207,11 +223,11 @@ cd       build
     --disable-libstdcxx-pch    \
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/15.2.0
 make
-make DESTDIR=$LFS/store/gcc-libstdc++-tmp install
-rm -v $LFS/store/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+make DESTDIR=$LFS/$CACHE_DIR/gcc-libstdc++-tmp install
+rm -v $LFS/$CACHE_DIR/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
-stow -d $LFS/store -t $LFS/ -S gcc-libstdc++-tmp
+ipkg gcc-libstdc++-tmp
 
 #m4-tmp
 tar -xf m4*z
@@ -220,10 +236,10 @@ pushd m4*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/m4-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/m4-tmp install
 popd
 rm -rf m4*/
-stow -d $LFS/store -t $LFS/ -S m4-tmp
+ipkg m4-tmp
 
 #ncurses-tmp
 tar -xf ncurses*z
@@ -248,13 +264,13 @@ popd
             --disable-stripping          \
             AWK=gawk
 make
-make DESTDIR=$LFS/store/ncurses-tmp install
-ln -sv libncursesw.so $LFS/store/ncurses-tmp/usr/lib/libncurses.so
+make DESTDIR=$LFS/$CACHE_DIR/ncurses-tmp install
+ln -sv libncursesw.so $LFS/$CACHE_DIR/ncurses-tmp/usr/lib/libncurses.so
 sed -e 's/^#if.*XOPEN.*$/#if 1/' \
-    -i $LFS/store/ncurses-tmp/usr/include/curses.h
+    -i $LFS/$CACHE_DIR/ncurses-tmp/usr/include/curses.h
 popd
 rm -rf ncurses*/
-stow -d $LFS/store -t $LFS/ -S ncurses-tmp
+ipkg ncurses-tmp
 
 #bash-tmp
 tar -xf bash*z
@@ -264,12 +280,11 @@ pushd bash*/
             --host=$LFS_TGT                    \
             --without-bash-malloc
 make
-make DESTDIR=$LFS/store/bash-tmp install
-#这里因为是bash-tmp目录里没bin，要添加usr
-ln -sv bash $LFS/store/bash-tmp/usr/bin/sh
+make DESTDIR=$LFS/$CACHE_DIR/bash-tmp install
+ln -sv bash $LFS/$CACHE_DIR/bash-tmp/usr/bin/sh
 popd
 rm -rf bash*/
-stow -d $LFS/store -t $LFS/ -S bash-tmp
+ipkg bash-tmp
 
 #coreutils-tmp
 tar -xf coreutils*z
@@ -280,13 +295,11 @@ pushd coreutils*/
             --enable-install-program=hostname \
             --enable-no-install-program=kill,uptime
 make
-make DESTDIR=$LFS/store/coreutils-tmp install
-mkdir -pv $LFS/store/coreutils-tmp/usr/share/man/man8
-mv -v $LFS/store/coreutils-tmp/usr/share/man/man1/chroot.1 $LFS/store/coreutils-tmp/usr/share/man/man8/chroot.8
-sed -i 's/"1"/"8"/'                    $LFS/store/coreutils-tmp/usr/share/man/man8/chroot.8
+make DESTDIR=$LFS/$CACHE_DIR/coreutils-tmp install
+#无需移动手册
 popd
 rm -rf coreutils*/
-stow -d $LFS/store -t $LFS/ -S coreutils-tmp
+ipkg coreutils-tmp
 
 #diffutils-tmp
 tar -xf diffutils*z
@@ -296,10 +309,10 @@ pushd diffutils*/
             gl_cv_func_strcasecmp_works=y \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/diffutils-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/diffutils-tmp install
 popd
 rm -rf diffutils*/
-stow -d $LFS/store -t $LFS/ -S diffutils-tmp
+ipkg diffutils-tmp
 
 #file-tmp
 tar -xf file*z
@@ -314,11 +327,11 @@ pushd build
 popd
 ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
 make FILE_COMPILE=$(pwd)/build/src/file
-make DESTDIR=$LFS/store/file-tmp install
-rm -v $LFS/store/file-tmp/usr/lib/libmagic.la
+make DESTDIR=$LFS/$CACHE_DIR/file-tmp install
+rm -v $LFS/$CACHE_DIR/file-tmp/usr/lib/libmagic.la
 popd
 rm -rf file*/
-stow -d $LFS/store -t $LFS/ -S file-tmp
+ipkg file-tmp
 
 #findutils-tmp
 tar -xf findutils*z
@@ -328,10 +341,10 @@ pushd */
             --host=$LFS_TGT                 \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/findutils-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/findutils-tmp install
 popd
 rm -rf findutils*/
-stow -d $LFS/store -t $LFS/ -S findutils-tmp
+ipkg findutils-tmp
 
 #gawk-tmp
 tar -xf gawk*z
@@ -341,10 +354,10 @@ sed -i 's/extras//' Makefile.in
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/gawk-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/gawk-tmp install
 popd
 rm -rf gawk*/
-stow -d $LFS/store -t $LFS/ -S gawk-tmp
+ipkg gawk-tmp
 
 #grep-tmp
 tar -xf grep*z
@@ -353,20 +366,20 @@ pushd grep*/
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/grep-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/grep-tmp install
 popd
 rm -rf grep*/
-stow -d $LFS/store -t $LFS/ -S grep-tmp
+ipkg grep-tmp
 
 #gzip-tmp
 tar -xf gzip*z
 pushd gzip*/
 ./configure --prefix=/usr --host=$LFS_TGT
 make
-make DESTDIR=$LFS/store/gzip-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/gzip-tmp install
 popd
 rm -rf gzip*/
-stow -d $LFS/store -t $LFS/ -S gzip-tmp
+ipkg gzip-tmp
 
 #make-tmp
 tar -xf make*z
@@ -375,10 +388,10 @@ pushd make*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/make-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/make-tmp install
 popd
 rm -rf make*/
-stow -d $LFS/store -t $LFS/ -S make-tmp
+ipkg make-tmp
 
 #patch-tmp
 tar -xf patch*z
@@ -387,10 +400,10 @@ pushd patch*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/patch-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/patch-tmp install
 popd
 rm -rf patch*/
-stow -d $LFS/store -t $LFS/ -S patch-tmp
+ipkg patch-tmp
 
 #sed-tmp
 tar -xf sed*z
@@ -399,10 +412,10 @@ pushd sed*/
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/sed-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/sed-tmp install
 popd
 rm -rf sed*/
-stow -d $LFS/store -t $LFS/ -S sed-tmp
+ipkg sed-tmp
 
 #tar-tmp
 tar -xf tar*z
@@ -411,10 +424,10 @@ pushd tar*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/store/tar-tmp install
+make DESTDIR=$LFS/$CACHE_DIR/tar-tmp install
 popd
 rm -rf tar*/
-stow -d $LFS/store -t $LFS/ -S tar-tmp
+ipkg tar-tmp
 
 #xz-tmp
 tar -xf xz*z
@@ -425,11 +438,11 @@ pushd xz*/
             --build=$(build-aux/config.guess) \
             --disable-static
 make
-make DESTDIR=$LFS/store/tar-tmp install
-rm -v $LFS/store/tar-tmp/usr/lib/liblzma.la
+make DESTDIR=$LFS/$CACHE_DIR/tar-tmp install
+rm -v $LFS/$CACHE_DIR/tar-tmp/usr/lib/liblzma.la
 popd
 rm -rf xz*/
-stow -d $LFS/store -t $LFS/ -S tar-tmp
+ipkg xz-tmp
 
 #binutils-tmp
 tar -xf binutils*z
@@ -449,11 +462,11 @@ cd       build
     --enable-new-dtags         \
     --enable-default-hash-style=gnu
 make
-make DESTDIR=$LFS/store/binutils-tmp install
-rm -v $LFS/store/binutils-tmp/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+make DESTDIR=$LFS/$CACHE_DIR/binutils-tmp install
+rm -v $LFS/$CACHE_DIR/binutils-tmp/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
 popd
 rm -rf binutils*/
-stow -d $LFS/store -t $LFS/ -S binutils-tmp
+ipkg binutils-tmp
 
 #gcc-tmp
 tar -xf gcc*z
@@ -494,14 +507,16 @@ cd       build
     --enable-languages=c,c++   \
     LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc
 make
-make DESTDIR=$LFS/store/gcc-tmp install
-ln -sv gcc $LFS/store/gcc-tmp/usr/bin/cc
+make DESTDIR=$LFS/$CACHE_DIR/gcc-tmp install
+ln -sv gcc $LFS/$CACHE_DIR/gcc-tmp/usr/bin/cc
 popd
 rm -rf gcc*/
-stow -d $LFS/store -t $LFS/ -S gcc-tmp -D gcc-libstdc++-tmp
+upkg  gcc-libstdc++-tmp
+ipkg gcc-tmp
 
 #暂时结束安装
 popd
+BASH
 SU
 [ ! -e /etc/bash.bashrc.NOUSE ] || mv -v /etc/bash.bashrc.NOUSE /etc/bash.bashrc
 
