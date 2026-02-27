@@ -4,7 +4,7 @@
 #apt install wget rsync
 #ln -sf /bin/bash /bin/sh
 
-MIRROR=akko.wutaohou.ru/cygauss/lfs-packages-12.4.tar
+MIRROR=
 SRC_DIR=usr/src
 CACHE_DIR=var/cache/pkg
 LIB_DIR=var/lib/pkg
