@@ -1,10 +1,9 @@
-#root下运行
-#apt update
-#apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils
-#apt install wget rsync
-#ln -sf /bin/bash /bin/sh
-
-MIRROR=akko.wutaohou.ru/cygauss/lfs-packages-12.4.tar
+#!/bin/bash
+#run in root
+#do on debian:
+#apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget && ln -sf /bin/bash /bin/sh
+VERSION=12.4
+MIRROR=mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar
 SRC_DIR=usr/src
 CACHE_DIR=var/cache/pkg
 LIB_DIR=var/lib/pkg
