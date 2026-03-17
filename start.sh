@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #run in root
 #do on debian:
 #apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget && ln -sf /bin/bash /bin/sh
