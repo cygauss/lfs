@@ -23,7 +23,7 @@ mkdir -pv $LFS
 chmod 755 $LFS
 
 mkdir -pv $LFS/$SRC_DIR
-wget -O $LFS/$SRC_DIR/lfs-packages.tar "$MIRROR"
+wget -O $LFS/$SRC_DIR/lfs-packages.tar --user-agent 1 "$MIRROR"
 tar -xf $LFS/$SRC_DIR/lfs-packages.tar  --strip-components=1 -C $LFS/$SRC_DIR
 chown -R root:root $LFS/$SRC_DIR
 
