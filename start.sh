@@ -1,10 +1,13 @@
 #!/bin/bash
-VERSION=12.4
-#ustc need verification
-MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
-#run in root
-#do on debian:
+#README! << EOF
+#run this script as root and run the version-check.sh in lfs book before.
+#on debian, this may be helpful:
 #apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget && ln -sf /bin/bash /bin/sh
+#EOF
+
+VERSION=12.4
+#Because ustc need verification, it add a parameter.
+MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
 
 export LFS=/mnt/lfs
 umask 022
@@ -19,10 +22,11 @@ groupdel lfs
 mkdir -pv $LFS
 chmod 755 $LFS
 
-mkdir -pv $LFS/$SRC_DIR
-wget "$MIRROR" -O - | tar --strip-components=1 -C "$LFS/$SRC_DIR" -xf
+mkdir -v $LFS/sources
+chmod -v a+wt $LFS/sources
+wget "$MIRROR" -O - | tar --strip-components=1 -C $LFS/sources -xf
 
-chown -R root:root $LFS/$SRC_DIR
+chown root:root $LFS/sources/*
 
 #软链接sbin,lib64到bin,lib,故修改原文
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
@@ -38,7 +42,7 @@ case $(uname -m) in
   ;;
 esac
 #tools太临时了就不改了
-mkdir -pv $LFS/tools/bin
+mkdir -pv $LFS/tools
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
