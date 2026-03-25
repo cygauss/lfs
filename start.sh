@@ -90,12 +90,12 @@ find $LFS/$CACHE_DIR/"$1" ! -type d -printf "$LFS/%P\n" > $LFS/$LIB_DIR/"$1"
 EOF
 chmod u+x $LFS/tools/bin/ipkg
 
-cat > $LFS/tools/bin/upkg << "EOF"
+cat > $LFS/tools/bin/rmpkg << "EOF"
 set -euo pipefail
 xargs -r rm -f -- < $LFS/$LIB_DIR/"$1"
 rm -- $LFS/$LIB_DIR/"$1"
 EOF
-chmod u+x $LFS/tools/bin/upkg
+chmod u+x $LFS/tools/bin/rmpkg
 
 pushd $LFS/$SRC_DIR
 
@@ -510,7 +510,7 @@ make DESTDIR=$LFS/$CACHE_DIR/gcc-tmp install
 ln -sv gcc $LFS/$CACHE_DIR/gcc-tmp/usr/bin/cc
 popd
 rm -rf gcc*/
-upkg  gcc-libstdc++-tmp
+rmpkg  gcc-libstdc++-tmp
 ipkg gcc-tmp
 
 #暂时结束安装
