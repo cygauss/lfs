@@ -1,13 +1,10 @@
 #!/bin/bash
+VERSION=12.4
+#ustc need verification
+MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
 #run in root
 #do on debian:
 #apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget && ln -sf /bin/bash /bin/sh
-VERSION=12.4
-MIRROR=mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar
-SRC_DIR=usr/src
-CACHE_DIR=var/cache/pkg
-LIB_DIR=var/lib/pkg
-export MIRORR SRC_DIR CACHE_DIR LIB_DIR
 
 export LFS=/mnt/lfs
 umask 022
@@ -23,8 +20,8 @@ mkdir -pv $LFS
 chmod 755 $LFS
 
 mkdir -pv $LFS/$SRC_DIR
-wget -O $LFS/$SRC_DIR/lfs-packages.tar --user-agent 1 "$MIRROR"
-tar -xf $LFS/$SRC_DIR/lfs-packages.tar  --strip-components=1 -C $LFS/$SRC_DIR
+wget "$MIRROR" -O - | tar --strip-components=1 -C "$LFS/$SRC_DIR" -xf
+
 chown -R root:root $LFS/$SRC_DIR
 
 #软链接sbin,lib64到bin,lib,故修改原文
@@ -57,10 +54,7 @@ cat > /home/lfs/.bashrc << EOF
 set +h
 umask 022
 LFS=$LFS
-SRC_DIR=$SRC_DIR
-CACHE_DIR=$CACHE_DIR
-LIB_DIR=$LIB_DIR
-export SRC_DIR CACHE_DIR LIB_DIR
+export SRC_DIR=$SRC_DIR
 EOF
 
 cat >> /home/lfs/.bashrc << "EOF"
