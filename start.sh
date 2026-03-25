@@ -79,23 +79,7 @@ EOF
 env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash << "BASH"
 source ~/.bashrc
 
-cat > $LFS/tools/bin/ipkg << "EOF"
-set -euo pipefail
-mkdir -p $LFS/$LIB_DIR
-rsync -aKni --existing $LFS/$CACHE_DIR/"$1"/ $LFS/ | awk '$1 != ".d..t......" { print; bad=1 } END { exit bad }'
-rsync -aK $LFS/$CACHE_DIR/"$1"/ $LFS/
-find $LFS/$CACHE_DIR/"$1" ! -type d -printf "$LFS/%P\n" > $LFS/$LIB_DIR/"$1"
-EOF
-chmod u+x $LFS/tools/bin/ipkg
-
-cat > $LFS/tools/bin/rmpkg << "EOF"
-set -euo pipefail
-xargs -r rm -f -- < $LFS/$LIB_DIR/"$1"
-rm -- $LFS/$LIB_DIR/"$1"
-EOF
-chmod u+x $LFS/tools/bin/rmpkg
-
-pushd $LFS/$SRC_DIR
+pushd $LFS/sources
 
 #package name
 #tar -xf *z
@@ -171,6 +155,9 @@ cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
 popd
 rm -rf gcc*/
 
+#从这里开始，我们需要stow，这里设置stow变量，同时之后的每一个包安装时都会修改以适应stow
+export STOW_DIR=$LFS/stow
+
 #linux-headers
 tar -xf linux*z
 pushd linux*/
@@ -178,11 +165,11 @@ make mrproper
 make headers
 find usr/include -type f ! -name '*.h' -delete
 #修改以建立fakeroot
-mkdir -pv $LFS/$CACHE_DIR/linux-headers/usr
-cp -r usr/include $LFS/$CACHE_DIR/linux-headers/usr
+mkdir -pv $STOW_DIR/linux-headers/usr
+cp -r usr/include $STOW_DIR/linux-headers/usr
 popd
 rm -rf linux*/
-ipkg linux-headers
+stow -S linux-headers
 
 #glibc-tmp
 tar -xf glibc*z
@@ -199,12 +186,12 @@ cd       build
       libc_cv_slibdir=/usr/lib           \
       --enable-kernel=5.4
 make
-make DESTDIR=$LFS/$CACHE_DIR/glibc-tmp install
+make DESTDIR=$STOW_DIR/glibc-tmp install
 # ldd 脚本无需更改
 #测试需要在stow后运行，这里也去掉
 popd
 rm -rf glibc*/
-ipkg glibc-tmp
+stow -S glibc-tmp
 
 #gcc-libstdc++-tmp
 tar -xf gcc*z
@@ -220,11 +207,11 @@ cd       build
     --disable-libstdcxx-pch    \
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/15.2.0
 make
-make DESTDIR=$LFS/$CACHE_DIR/gcc-libstdc++-tmp install
-rm -v $LFS/$CACHE_DIR/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+make DESTDIR=$STOW_DIR/gcc-libstdc++-tmp install
+rm -v $STOW_DIR/gcc-libstdc++-tmp/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 popd
 rm -rf gcc*/
-ipkg gcc-libstdc++-tmp
+stow -S gcc-libstdc++-tmp
 
 #m4-tmp
 tar -xf m4*z
