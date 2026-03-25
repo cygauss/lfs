@@ -1,13 +1,13 @@
 #!/bin/bash
 #README! << EOF
 #run this script as root and run the version-check.sh in lfs book before.
-#on debian, this may be helpful:
-#apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget && ln -sf /bin/bash /bin/sh
-#EOF
-
+#for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget rsync && ln -sf /bin/bash /bin/sh
+#define lfs version
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
 MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
+#some envs below cant be changed derectly, be careful.
+#EOF
 
 export LFS=/mnt/lfs
 umask 022
@@ -24,8 +24,8 @@ chmod 755 $LFS
 
 mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
+#看情况修改资源获取方式
 wget "$MIRROR" -O - | tar --strip-components=1 -C $LFS/sources -xf
-
 chown root:root $LFS/sources/*
 
 #软链接sbin,lib64到bin,lib,故修改原文
@@ -51,26 +51,6 @@ chown -R lfs:lfs $LFS
 
 #结束后需返还
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
-
-#因非交互shell做了调整
-
-cat > /home/lfs/.bashrc << EOF
-set +h
-umask 022
-LFS=$LFS
-export SRC_DIR=$SRC_DIR
-EOF
-
-cat >> /home/lfs/.bashrc << "EOF"
-LC_ALL=POSIX
-LFS_TGT=$(uname -m)-lfs-linux-gnu
-PATH=/usr/bin
-if [ ! -L /bin ]; then PATH=/bin:$PATH; fi
-PATH=$LFS/tools/bin:$PATH
-CONFIG_SITE=$LFS/usr/share/config.site
-MAKEFLAGS=-j$(nproc)
-export LFS LC_ALL LFS_TGT PATH CONFIG_SITE MAKEFLAGS
-EOF
 
 chown -R lfs:lfs /home/lfs
 
