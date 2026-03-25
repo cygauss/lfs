@@ -6,7 +6,8 @@
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
 MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
-#some envs below cant be changed derectly, be careful.
+#some envs below cant be changed derectly for simplicity with official lfs, be careful.
+#but the simple 
 #EOF
 
 export LFS=/mnt/lfs
@@ -54,10 +55,12 @@ chown -R root:root $LFS/sources
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
 
 su - lfs << "SU"
+#其实.bash_profile是用不到的，但是尽量和lfs减少差别
 cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
 EOF
 
+#这里没有把LFS变成由$LFS定义，即开头所说了一些变量不可直接替换。
 cat > ~/.bashrc << "EOF"
 set +h
 umask 022
@@ -72,7 +75,7 @@ export LFS LC_ALL LFS_TGT PATH CONFIG_SITE
 export MAKEFLAGS=-j$(nproc)
 EOF
 
-#其实.bash_profile是用不到的，但是尽量和lfs减少差别，所以上面加了。这里添加的才是真正起作用的地方，原因与非交互shell等因素有关
+#这里与非交互shell等因素有关，故作修改
 env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash << "BASH"
 source ~/.bashrc
 
