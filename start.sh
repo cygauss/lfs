@@ -26,7 +26,7 @@ chmod 755 $LFS
 mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
 #看情况修改资源获取方式
-wget "$MIRROR" -O - | tar --strip-components=1 -C $LFS/sources -xf
+wget $MIRROR -O - | tar --strip-components=1 -C $LFS/sources -xf
 #考虑到这里和后面的操作是为了让sources属于root，其他文件属于lfs，故在这里去掉，在后面修改
 
 #软链接sbin,lib64到bin,lib,故修改原文
