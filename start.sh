@@ -177,9 +177,9 @@ pushd glibc*/
 #从简不采用lsb和fhs的链接和补丁
 mkdir -v build
 cd       build
-#这里sbin换成了bin。在有软链接的情况保留移动，避免出现奇怪的相对路径解析.
+#这里修改的目的是把程序都移动到usr/bin，在有软链接的情况保留移动，避免出现奇怪的相对路径解析.
 echo "sbindir=/usr/bin" > configparms
-echo "rootsbindir=/usr/bin" > configparms
+echo "rootsbindir=/usr/bin" >> configparms
 ../configure                             \
       --prefix=/usr                      \
       --host=$LFS_TGT                    \
