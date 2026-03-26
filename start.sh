@@ -191,7 +191,7 @@ make
 make DESTDIR=$STOW_DIR/glibc-tmp install
 
 # ldd 脚本无需更改
-#测试需要在stow后运行，这里也去掉
+#测试需要在stow后运行,且疑似有问题。
 popd
 rm -rf glibc*/
 stow -S glibc-tmp
