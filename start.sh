@@ -177,7 +177,8 @@ pushd glibc*/
 #从简不采用lsb和fhs的链接和补丁
 mkdir -v build
 cd       build
-#从简不改变bin位置
+#这里sbin换成了bin。在有软链接的情况保留移动，避免出现奇怪的相对路径解析.
+echo "rootsbindir=/usr/bin" > configparms
 ../configure                             \
       --prefix=/usr                      \
       --host=$LFS_TGT                    \
@@ -187,6 +188,7 @@ cd       build
       --enable-kernel=5.4
 make
 make DESTDIR=$STOW_DIR/glibc-tmp install
+
 # ldd 脚本无需更改
 #测试需要在stow后运行，这里也去掉
 popd
