@@ -223,10 +223,10 @@ pushd m4*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/m4-tmp install
+make DESTDIR=$STOW_DIR/m4-tmp install
 popd
 rm -rf m4*/
-ipkg m4-tmp
+stow -S m4-tmp
 
 #ncurses-tmp
 tar -xf ncurses*z
@@ -251,13 +251,13 @@ popd
             --disable-stripping          \
             AWK=gawk
 make
-make DESTDIR=$LFS/$CACHE_DIR/ncurses-tmp install
-ln -sv libncursesw.so $LFS/$CACHE_DIR/ncurses-tmp/usr/lib/libncurses.so
+make DESTDIR=$STOW_DIR/ncurses-tmp install
+ln -sv libncursesw.so $STOW_DIR/ncurses-tmp/usr/lib/libncurses.so
 sed -e 's/^#if.*XOPEN.*$/#if 1/' \
-    -i $LFS/$CACHE_DIR/ncurses-tmp/usr/include/curses.h
+    -i $STOW_DIR/ncurses-tmp/usr/include/curses.h
 popd
 rm -rf ncurses*/
-ipkg ncurses-tmp
+stow -S ncurses-tmp
 
 #bash-tmp
 tar -xf bash*z
@@ -267,11 +267,11 @@ pushd bash*/
             --host=$LFS_TGT                    \
             --without-bash-malloc
 make
-make DESTDIR=$LFS/$CACHE_DIR/bash-tmp install
-ln -sv bash $LFS/$CACHE_DIR/bash-tmp/usr/bin/sh
+make DESTDIR=$STOW_DIR/bash-tmp install
+ln -sv bash $STOW_DIR/bash-tmp/usr/bin/sh
 popd
 rm -rf bash*/
-ipkg bash-tmp
+stow -S bash-tmp
 
 #coreutils-tmp
 tar -xf coreutils*z
@@ -282,11 +282,11 @@ pushd coreutils*/
             --enable-install-program=hostname \
             --enable-no-install-program=kill,uptime
 make
-make DESTDIR=$LFS/$CACHE_DIR/coreutils-tmp install
+make DESTDIR=$STOW_DIR/coreutils-tmp install
 #无需移动手册
 popd
 rm -rf coreutils*/
-ipkg coreutils-tmp
+stow -S coreutils-tmp
 
 #diffutils-tmp
 tar -xf diffutils*z
@@ -296,10 +296,10 @@ pushd diffutils*/
             gl_cv_func_strcasecmp_works=y \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/diffutils-tmp install
+make DESTDIR=$STOW_DIR/diffutils-tmp install
 popd
 rm -rf diffutils*/
-ipkg diffutils-tmp
+stow -S diffutils-tmp
 
 #file-tmp
 tar -xf file*z
@@ -314,11 +314,11 @@ pushd build
 popd
 ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
 make FILE_COMPILE=$(pwd)/build/src/file
-make DESTDIR=$LFS/$CACHE_DIR/file-tmp install
-rm -v $LFS/$CACHE_DIR/file-tmp/usr/lib/libmagic.la
+make DESTDIR=$STOW_DIR/file-tmp install
+rm -v $STOW_DIR/file-tmp/usr/lib/libmagic.la
 popd
 rm -rf file*/
-ipkg file-tmp
+stow -S file-tmp
 
 #findutils-tmp
 tar -xf findutils*z
@@ -328,10 +328,10 @@ pushd */
             --host=$LFS_TGT                 \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/findutils-tmp install
+make DESTDIR=$STOW_DIR/findutils-tmp install
 popd
 rm -rf findutils*/
-ipkg findutils-tmp
+stow -S findutils-tmp
 
 #gawk-tmp
 tar -xf gawk*z
@@ -341,10 +341,9 @@ sed -i 's/extras//' Makefile.in
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/gawk-tmp install
-popd
+make DESTDIR=$STOW_DIR/gawk-tmp install
 rm -rf gawk*/
-ipkg gawk-tmp
+stow -S gawk-tmp
 
 #grep-tmp
 tar -xf grep*z
@@ -353,20 +352,20 @@ pushd grep*/
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/grep-tmp install
+make DESTDIR=$STOW_DIR/grep-tmp install
 popd
 rm -rf grep*/
-ipkg grep-tmp
+stow -S grep-tmp
 
 #gzip-tmp
 tar -xf gzip*z
 pushd gzip*/
 ./configure --prefix=/usr --host=$LFS_TGT
 make
-make DESTDIR=$LFS/$CACHE_DIR/gzip-tmp install
+make DESTDIR=$STOW_DIR/gzip-tmp install
 popd
 rm -rf gzip*/
-ipkg gzip-tmp
+stow -S gzip-tmp
 
 #make-tmp
 tar -xf make*z
@@ -375,10 +374,10 @@ pushd make*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/make-tmp install
+make DESTDIR=$STOW_DIR/make-tmp install
 popd
 rm -rf make*/
-ipkg make-tmp
+stow -S make-tmp
 
 #patch-tmp
 tar -xf patch*z
@@ -387,10 +386,10 @@ pushd patch*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/patch-tmp install
+make DESTDIR=$STOW_DIR/patch-tmp install
 popd
 rm -rf patch*/
-ipkg patch-tmp
+stow -S patch-tmp
 
 #sed-tmp
 tar -xf sed*z
@@ -399,10 +398,10 @@ pushd sed*/
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/sed-tmp install
+make DESTDIR=$STOW_DIR/sed-tmp install
 popd
 rm -rf sed*/
-ipkg sed-tmp
+stow -S sed-tmp
 
 #tar-tmp
 tar -xf tar*z
@@ -411,10 +410,10 @@ pushd tar*/
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
 make
-make DESTDIR=$LFS/$CACHE_DIR/tar-tmp install
+make DESTDIR=$STOW_DIR/tar-tmp install
 popd
 rm -rf tar*/
-ipkg tar-tmp
+stow -S tar-tmp
 
 #xz-tmp
 tar -xf xz*z
@@ -425,11 +424,11 @@ pushd xz*/
             --build=$(build-aux/config.guess) \
             --disable-static
 make
-make DESTDIR=$LFS/$CACHE_DIR/xz-tmp install
-rm -v $LFS/$CACHE_DIR/xz-tmp/usr/lib/liblzma.la
+make DESTDIR=$STOW_DIR/xz-tmp install
+rm -v $STOW_DIR/xz-tmp/usr/lib/liblzma.la
 popd
 rm -rf xz*/
-ipkg xz-tmp
+stow -S xz-tmp
 
 #binutils-tmp
 tar -xf binutils*z
@@ -449,11 +448,11 @@ cd       build
     --enable-new-dtags         \
     --enable-default-hash-style=gnu
 make
-make DESTDIR=$LFS/$CACHE_DIR/binutils-tmp install
-rm -v $LFS/$CACHE_DIR/binutils-tmp/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+make DESTDIR=$STOW_DIR/binutils-tmp install
+rm -v $STOW_DIR/binutils-tmp/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
 popd
 rm -rf binutils*/
-ipkg binutils-tmp
+stow -S binutils-tmp
 
 #gcc-tmp
 tar -xf gcc*z
@@ -494,12 +493,11 @@ cd       build
     --enable-languages=c,c++   \
     LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc
 make
-make DESTDIR=$LFS/$CACHE_DIR/gcc-tmp install
-ln -sv gcc $LFS/$CACHE_DIR/gcc-tmp/usr/bin/cc
+make DESTDIR=$STOW_DIR/gcc-tmp install
+ln -sv gcc $STOW_DIR/gcc-tmp/usr/bin/cc
 popd
 rm -rf gcc*/
-rmpkg  gcc-libstdc++-tmp
-ipkg gcc-tmp
+stow -S gcc-tmp
 
 #暂时结束安装
 popd
