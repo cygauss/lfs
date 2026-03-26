@@ -6,8 +6,7 @@
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
 MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
-#some envs below cant be changed derectly for simplicity with official lfs, be careful.
-#but the simple 
+#some envs below cant be changed derectly for simplicity with official lfs, be careful
 #EOF
 
 export LFS=/mnt/lfs
@@ -79,14 +78,22 @@ EOF
 env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash << "BASH"
 source ~/.bashrc
 
+#这里做一个保险设置
+set -euo pipefail
+
 pushd $LFS/sources
 
-#package name
-#tar -xf *z
-#pushd */
+#这里设置stow变量，同时之后的绝大多数包安装时都会修改以适应stow
+export STOW_DIR=$LFS/stow
+
+#<package>
+#tar -xf <package>*z
+#pushd <package>*/
 #compile
+#make DESTDIR=<package> install
 #popd
-#rm -rf */
+#rm -rf <package>*/
+#stow -S <package>
 
 #binutils-tools
 tar -xf binutils*z
@@ -154,9 +161,6 @@ cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
   `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
 popd
 rm -rf gcc*/
-
-#从这里开始，我们需要stow，这里设置stow变量，同时之后的每一个包安装时都会修改以适应stow
-export STOW_DIR=$LFS/stow
 
 #linux-headers
 tar -xf linux*z
@@ -496,9 +500,9 @@ cd       build
 make
 make DESTDIR=$STOW_DIR/gcc-tmp install
 ln -sv gcc $STOW_DIR/gcc-tmp/usr/bin/cc
-popd
+popd  
 rm -rf gcc*/
-stow -S gcc-tmp
+stow -D gcc-libstdc++-tmp -S gcc-tmp
 
 #暂时结束安装
 popd
