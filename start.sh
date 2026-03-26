@@ -500,7 +500,7 @@ cd       build
 make
 make DESTDIR=$STOW_DIR/gcc-tmp install
 ln -sv gcc $STOW_DIR/gcc-tmp/usr/bin/cc
-popd  
+popd
 rm -rf gcc*/
 stow -D gcc-libstdc++-tmp -S gcc-tmp
 
