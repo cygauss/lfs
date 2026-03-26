@@ -6,6 +6,7 @@
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
 MIRROR="--user-agent 1 mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-"$VERSION".tar"
+STOW_MIR="--user-agent 1 mirrors.ustc.edu.cn/gnu/stow/stow-2.4.1.tar.gz"
 #some envs below cant be changed derectly for simplicity with official lfs, be careful
 #EOF
 
@@ -26,6 +27,7 @@ mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
 #看情况修改资源获取方式
 wget $MIRROR -O - | tar --strip-components=1 -C $LFS/sources -xf -
+wget $STOW_MIR -P $LFS/sources
 #考虑到这里和后面的操作是为了让sources属于root，其他文件属于lfs，故在这里去掉，在后面修改
 
 #软链接sbin,lib64到bin,lib,故修改原文
