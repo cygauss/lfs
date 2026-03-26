@@ -342,6 +342,7 @@ sed -i 's/extras//' Makefile.in
             --build=$(build-aux/config.guess)
 make
 make DESTDIR=$STOW_DIR/gawk-tmp install
+popd
 rm -rf gawk*/
 stow -S gawk-tmp
 
