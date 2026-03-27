@@ -28,7 +28,7 @@ chmod -v a+wt $LFS/sources
 #看情况修改资源获取方式
 wget $MIRROR -O - | tar --strip-components=1 -C $LFS/sources -xf -
 wget $STOW_MIR -P $LFS/sources
-#考虑到这里和后面的操作是为了让sources属于root，其他文件属于lfs，故在这里去掉，在后面修改
+#考虑到这里和后面的操作结果是sources属于root，直观上不必要，故试着去掉。
 
 #软链接sbin,lib64到bin,lib,故修改原文
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
@@ -43,14 +43,12 @@ case $(uname -m) in
   ln -sv usr/lib $LFS/lib64
   ;;
 esac
-#tools太临时了就不改了
 mkdir -pv $LFS/tools
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
 #修改写法
 chown -R lfs:lfs $LFS
-chown -R root:root $LFS/sources
 
 #结束后需返还，这里相对文档提前了，属于是文档的问题
 [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
