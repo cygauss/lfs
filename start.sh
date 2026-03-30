@@ -194,7 +194,8 @@ echo "rootsbindir=/usr/bin" >> configparms
 make
 make DESTDIR=$STOW_DIR/glibc-tmp install
 
-# ldd 脚本无需更改
+#搞usr merge是为了兼容，这里简单改一改就可以完美适配，那还去留着兼容干嘛
+sed -i 's|^RTLDLIST=.*|RTLDLIST="/usr/lib/ld-linux-x86-64.so.2"|' /usr/bin/ldd
 #测试需要在stow后运行,且疑似有问题。
 popd
 rm -rf glibc*/
