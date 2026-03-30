@@ -1,4 +1,7 @@
 #!/bin/bash
+#现在我才体会到lfs不merge /lib64 到/usr/lib的良苦用心。
+#考虑到debian这样的发行版也只在lib64中放ld，这种方式的兼容性肯定没问题，甚至我们能把lib64放到包glibc中
+#兼容性的核心是我们在四个lib文件夹中都能找到ld，所以我们将lib64作为usr/lib64的链接
 #README! << EOF
 #run this script as root and run the version-check.sh in lfs book before.
 #for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget rsync && ln -sf /bin/bash /bin/sh
@@ -34,7 +37,8 @@ wget $STOW_MIR -P $LFS/sources
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
 ln -sv usr/bin $LFS/sbin
-ln -sv usr/bin $LFS/bin
+ln -sv usr/bin $LFS
+/bin
 ln -sv usr/lib $LFS/lib
 
 case $(uname -m) in
