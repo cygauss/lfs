@@ -1,7 +1,6 @@
 #!/bin/bash
 #现在我才体会到lfs不merge /lib64 到/usr/lib的良苦用心。
-#考虑到debian这样的发行版也只在lib64中放ld，这种方式的兼容性肯定没问题，甚至我们能把lib64放到包glibc中
-#兼容性的核心是我们在四个lib文件夹中都能找到ld，所以我们将lib64作为usr/lib64的链接
+#这里采用lib64和usr/lib64是独立但相同的文件夹，由glibc管理
 #README! << EOF
 #run this script as root and run the version-check.sh in lfs book before.
 #for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget rsync && ln -sf /bin/bash /bin/sh
@@ -33,20 +32,13 @@ wget $MIRROR -O - | tar --strip-components=1 -C $LFS/sources -xf -
 wget $STOW_MIR -P $LFS/sources
 #考虑到这里和后面的操作结果是sources属于root，直观上不必要，故试着去掉。
 
-#软链接sbin,lib64到bin,lib,故修改原文
+#修改链接
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
 ln -sv usr/bin $LFS/sbin
-ln -sv usr/bin $LFS
-/bin
+ln -sv usr/bin $LFS/bin
 ln -sv usr/lib $LFS/lib
 
-case $(uname -m) in
-  x86_64)
-  ln -sv lib $LFS/usr/lib64
-  ln -sv usr/lib $LFS/lib64
-  ;;
-esac
 mkdir -pv $LFS/tools
 
 groupadd lfs
@@ -182,7 +174,16 @@ stow -S linux-headers
 #glibc-tmp
 tar -xf glibc*z
 pushd glibc*/
-#从简不采用lsb和fhs的链接和补丁
+#在glibc中管理lib64，同时去掉lsb补丁
+case $(uname -m) in
+  x86_64)
+  mkdir -p $STOW_DIR/glibc-tmp/usr/lib64
+  mkdir -p $STOW_DIR/glibc-tmp/lib64
+  ln -sfv ../usr/lib/ld-linux-x86-64.so.2 $STOW_DIR/glibc-tmp/lib64
+  ln -sfv ../lib/ld-linux-x86-64.so.2 $STOW_DIR/glibc-tmp/usr/lib64
+  ;;
+esac
+
 mkdir -v build
 cd       build
 #这里修改的目的是把程序都移动到usr/bin，在有软链接的情况保留移动，避免出现奇怪的相对路径解析.
@@ -199,7 +200,7 @@ make
 make DESTDIR=$STOW_DIR/glibc-tmp install
 
 #无需修改ldd
-#测试需要在stow后运行,且疑似有问题。
+#测试需要在stow后运行。
 popd
 rm -rf glibc*/
 stow -S glibc-tmp
