@@ -3,7 +3,7 @@
 #这里采用lib64和usr/lib64是独立但相同的文件夹，由glibc管理
 #README! << EOF
 #run this script as root and run the version-check.sh in lfs book before.
-#for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget rsync && ln -sf /bin/bash /bin/sh
+#for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget stow && ln -sf /bin/bash /bin/sh
 #define lfs version
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
