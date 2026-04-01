@@ -4,6 +4,7 @@
 #README! << EOF
 #run this script as root and run the version-check.sh in lfs book before.
 #for debian, this may be helpful: apt update && apt install binutils bison gawk gcc g++ m4 make patch python3 texinfo xz-utils wget stow && ln -sf /bin/bash /bin/sh
+#for archlinux:  pacman -S bison gcc m4 make patch python3 texinfo xz wget diffutils stow
 #define lfs version
 VERSION=12.4
 #Because ustc need verification, it add a parameter.
