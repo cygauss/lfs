@@ -35,7 +35,8 @@ wget $STOW_MIR -P $LFS/sources
 #修改链接
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib}
 ln -sv bin $LFS/usr/sbin
-ln -sv usr/bin $LFS/sbin
+
+ln -sv usr/sbin $LFS/sbin
 ln -sv usr/bin $LFS/bin
 ln -sv usr/lib $LFS/lib
 
